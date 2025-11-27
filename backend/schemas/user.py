@@ -1,8 +1,10 @@
 from pydantic import BaseModel
-
+from typing import Optional
+from datetime import datetime
 class Lectura_Sensores(BaseModel): 
-    id: str
-    nivel_agua_cm: str
-    temperatura_c: str
-    humedad_porcentaje: str
+    id: Optional[str] = None
+    nivel_agua_cm: float
+    temperatura_c: float
+    humedad_porcentaje: float
+    fecha_registro: Optional[datetime] = None
     
