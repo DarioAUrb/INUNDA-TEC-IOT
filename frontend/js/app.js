@@ -1,3 +1,7 @@
+const WATER_THRESHOLD_WARNING = 30;
+const WATER_THRESHOLD_DANGER = 100;
+
+// Obtener datos de sensores
 async function fetchSensorData() {
     try {
         const response = await fetch('http://localhost:8000/sensors?limit=50');
@@ -11,12 +15,14 @@ async function fetchSensorData() {
             document.getElementById('humidity').textContent = (lastRecord.humidity_percentage || 0).toFixed(0);
 
             updateCharts(data.data);
+            checkWaterLevelAlerts(lastRecord.water_level_cm);
         }
     } catch (error) {
         console.error("Error fetching sensor data:", error);
     }
 }
 
+// Obtener estadísticas
 async function fetchStatistics() {
     try {
         const response = await fetch('http://localhost:8000/sensors/statistics');
@@ -44,9 +50,37 @@ async function fetchStatistics() {
     }
 }
 
+// Verificar alertas de nivel de agua
+function checkWaterLevelAlerts(waterLevel) {
+    const alertsBox = document.getElementById('alertsBox');
+    alertsBox.innerHTML = '';
+
+    if (waterLevel >= WATER_THRESHOLD_DANGER) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger';
+        alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> PELIGRO: Nivel crítico (${waterLevel.toFixed(2)} cm)`;
+        alertsBox.appendChild(alert);
+    } else if (waterLevel >= WATER_THRESHOLD_WARNING) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-warning';
+        alert.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Advertencia: Nivel elevado (${waterLevel.toFixed(2)} cm)`;
+        alertsBox.appendChild(alert);
+    } else {
+        const noAlert = document.createElement('div');
+        noAlert.className = 'no-alerts';
+        noAlert.textContent = 'Sin alertas';
+        alertsBox.appendChild(noAlert);
+    }
+}
+
+// Cargar datos al iniciar
 window.addEventListener("load", () => {
     fetchSensorData();
     fetchStatistics();
 });
 
-setInterval(fetchSensorData, 5000);
+// Actualizar cada 5 segundos
+setInterval(() => {
+    fetchSensorData();
+    fetchStatistics();
+}, 5000);

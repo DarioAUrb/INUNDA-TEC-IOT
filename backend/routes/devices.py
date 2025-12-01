@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query  
-from config.db import conn  
+from config.db import engine
 from models.devices import Sensors  
 from schemas.devices import SensorReading
 from sqlalchemy import desc  
@@ -13,6 +13,7 @@ sensor = APIRouter()
 # POST route to insert sensor data into the database
 @sensor.post("/sensors")
 def create_sensor_data(data: SensorReading):
+    conn = engine.connect()
     try:
         new_data = {
             "water_level_cm": data.water_level_cm,
@@ -36,6 +37,8 @@ def create_sensor_data(data: SensorReading):
             status_code=500,
             detail=f"Error saving data: {str(e)}"
         )
+    finally:
+        conn.close()
 
 
 # GET route to retrieve sensor data with pagination
@@ -44,6 +47,7 @@ def get_sensors(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     offset: int = Query(0, ge=0, description="Offset from the beginning"),
 ):
+    conn = engine.connect()
     try:
         query = Sensors.select()   
         query = query.order_by(desc(Sensors.c.registration_date))
@@ -60,22 +64,22 @@ def get_sensors(
             "data": [dict(row._mapping) for row in data]
         }
     
-    except HTTPException as e:
-        raise e
     except Exception as e:
         logger.error(f"Error in GET /sensors: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Error querying data: {str(e)}"
         )
+    finally:
+        conn.close()
 
 
 # GET route to calculate sensor statistics
 @sensor.get("/sensors/statistics")
 def get_statistics():
+    conn = engine.connect()
     try:
         query = Sensors.select()
-
         result = conn.execute(query)
         data = result.fetchall()
         
@@ -114,11 +118,11 @@ def get_statistics():
             "humidity_percentage": calculate_stats(humidity_values)
         }
     
-    except HTTPException as e:
-        raise e
     except Exception as e:
         logger.error(f"Error in GET /sensors/statistics: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Error calculating statistics: {str(e)}"
         )
+    finally:
+        conn.close()
