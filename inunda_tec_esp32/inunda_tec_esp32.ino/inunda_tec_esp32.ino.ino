@@ -23,6 +23,9 @@ DHT dht(DHT_PIN, DHT_TYPE);
 #define ULTRASONIC_TRIG_PIN 23     // Connected to GPIO23 for TRIG
 #define ULTRASONIC_ECHO_PIN 22     // Connected to GPIO22 for ECHO
 
+// Box Configuration
+#define BOX_HEIGHT 12.0  // Total box height in cm
+
 
 unsigned long lastSendTime = 0;
 const long sendInterval = 10000;  // Send every 10 seconds
@@ -97,11 +100,11 @@ float readDistance() {
 
     long pulseDuration = pulseIn(ULTRASONIC_ECHO_PIN, HIGH, 30000);
     
-    if (pulseDuration > 0 && pulseDuration < 23200) {  // Maximum 400cm
+    if (pulseDuration > 0 && pulseDuration < 23200) {
       float distance = pulseDuration * 0.0343 / 2;
       
-      // Only accepts readings between 20 and 400 cm
-      if (distance >= 20) {
+      // Validate that it's between 0 and 12 cm (box height)
+      if (distance >= 0 && distance <= BOX_HEIGHT) {
         distanceReadings[validReadings] = distance;
         validReadings++;
       }
@@ -143,17 +146,31 @@ void readSensorsAndSend() {
   Serial.print(humidity);
   Serial.println(" %");
 
-  // Ultrasonic Sensor Reading
+  // Ultrasonic Sensor Reading (distance to the bottom of the box)
   float distance = readDistance();
 
-  Serial.print("Water level (distance): ");
+  // Calculate water height
+  float waterHeight = 0;
+  if (distance > 0) {
+    waterHeight = BOX_HEIGHT - distance;
+    waterHeight = constrain(waterHeight, 0, BOX_HEIGHT);
+  } else {
+    Serial.println("Error: Unable to read distance from sensor");
+    return;
+  }
+
+  Serial.print("Distance to bottom (cm): ");
   Serial.print(distance);
+  Serial.println(" cm");
+
+  Serial.print("Water height: ");
+  Serial.print(waterHeight);
   Serial.println(" cm");
 
   Serial.println("#########################");
 
-  // Send to server
-  sendData(distance, temperature, humidity);
+  // Send to server (now with water height, not distance)
+  sendData(waterHeight, temperature, humidity);
 }
 
 

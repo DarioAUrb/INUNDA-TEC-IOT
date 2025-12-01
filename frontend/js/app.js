@@ -1,5 +1,5 @@
-const WATER_THRESHOLD_WARNING = 30;
-const WATER_THRESHOLD_DANGER = 100;
+const WATER_THRESHOLD_WARNING = 5;
+const WATER_THRESHOLD_DANGER = 9;
 
 // Obtener datos de sensores
 async function fetchSensorData() {
