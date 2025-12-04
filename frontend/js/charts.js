@@ -11,7 +11,7 @@ function updateCharts(data) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Water Level (cm)',
+                label: 'Water Level (m)',
                 data: waterLevels,
                 borderColor: '#e74c3c',
                 backgroundColor: 'rgba(231,76,60,0.1)',

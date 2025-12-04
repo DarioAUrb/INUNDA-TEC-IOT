@@ -4,6 +4,8 @@ from models.devices import Sensors
 from schemas.devices import SensorReading
 from sqlalchemy import desc  
 import logging  
+from routes.alerts import check_and_send_alerts
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ def create_sensor_data(data: SensorReading):
         }
         result = conn.execute(Sensors.insert().values(new_data))
         conn.commit()  
-        
+        check_and_send_alerts(data.water_level_cm)
         logger.info(f"Data inserted successfully. ID: {result.inserted_primary_key}")
         
         return {
